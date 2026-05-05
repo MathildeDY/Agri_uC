@@ -1,0 +1,51 @@
+# =========================
+# Build folders
+# =========================
+Debug/
+Release/
+build/
+out/
+
+# =========================
+# STM32CubeIDE metadata
+# =========================
+.metadata/
+.settings/
+*.launch
+
+# =========================
+# Generated files
+# =========================
+*.o
+*.d
+*.elf
+*.bin
+*.hex
+*.map
+*.lst
+*.axf
+*.su
+
+# =========================
+# Logs & temp
+# =========================
+*.log
+*.tmp
+
+# =========================
+# CubeMX temporary files
+# =========================
+*.ioc.bak
+*.mxproject
+
+# =========================
+# IDE files (optional)
+# =========================
+*.project.bak
+*.cproject.bak
+
+# =========================
+# OS files
+# =========================
+.DS_Store
+Thumbs.db
