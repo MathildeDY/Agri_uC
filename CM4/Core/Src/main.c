@@ -26,12 +26,14 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-
+typedef struct {
+	uint16_t pulses;
+} Data_t;
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define BUFFER_SIZE 32
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -45,6 +47,8 @@ DMA_HandleTypeDef hdma_i2c1_tx;
 
 /* USER CODE BEGIN PV */
 uint8_t RX_Buffer [2];
+Data_t data_log[BUFFER_SIZE]; // Adjust size depending on how many measures to store
+uint8_t buffer_index = 0;
 uint16_t addr = 0x03 << 1; // slave adress shifted left (MINION_ADDR of the VHDL project)
 /* USER CODE END PV */
 
@@ -105,9 +109,6 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-	  HAL_I2C_Master_Receive(&hi2c1,addr,(uint8_t *)RX_Buffer,2,1000); // 2 -> Number of bytes to read
-																	  // 1000 -> Timeout
-	  HAL_Delay(100);
 
     /* USER CODE BEGIN 3 */
   }
@@ -230,17 +231,47 @@ static void MX_DMA_Init(void)
 static void MX_GPIO_Init(void)
 {
 /* USER CODE BEGIN MX_GPIO_Init_1 */
+	GPIO_InitTypeDef GPIO_InitStruct = {0};
 /* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
+  /* PB6 en interruption */
+  GPIO_InitStruct.Pin = GPIO_PIN_6;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;   // recommandé si FPGA pousse HIGH
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 /* USER CODE END MX_GPIO_Init_2 */
 }
 
 /* USER CODE BEGIN 4 */
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+    if (GPIO_Pin == GPIO_PIN_6) // IRQ -> 1
+    {
+    	HAL_I2C_Master_Receive_IT(&hi2c1,addr,(uint8_t *)RX_Buffer,2); // 2 -> Number of bytes to read
+    																	// 1000 -> Timeout
+    }
+}
 
+// Called after receive is done
+void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef *hi2c)
+{
+	// Stock the pulses results
+	Data_t value;
+	value.pulses = (RX_Buffer[0] << 8 | RX_Buffer[1]); // MSB arrives first
+	data_log[buffer_index] = value;
+
+	buffer_index++;
+	if (buffer_index > BUFFER_SIZE) {
+		buffer_index = 0;
+	}
+}
 /* USER CODE END 4 */
 
 /**
