@@ -49,6 +49,7 @@ uint8_t RX_Buffer [2];
 Data_t data_log[BUFFER_SIZE]; // Adjust size depending on how many measures to store
 uint8_t buffer_index = 0;
 uint16_t addr = 0x03 << 1; // slave adress shifted left (MINION_ADDR of the VHDL project)
+uint8_t measure_period = 3; // Measure period in minutes for testing (soon hours)
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -103,6 +104,7 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  HAL_I2C_Master_Transmit(&hi2c1, addr, &measure_period, 1, 100);
   while (1)
   {
     /* USER CODE END WHILE */
@@ -221,7 +223,7 @@ static void MX_GPIO_Init(void)
   /* PB6 en interruption */
   GPIO_InitStruct.Pin = GPIO_PIN_6;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-  GPIO_InitStruct.Pull = GPIO_PULLDOWN;   // recommandé si FPGA pousse HIGH
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
@@ -235,7 +237,6 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     if (GPIO_Pin == GPIO_PIN_6) // IRQ -> 1
     {
     	HAL_I2C_Master_Receive_IT(&hi2c1,addr,(uint8_t *)RX_Buffer,2); // 2 -> Number of bytes to read
-    																	// 1000 -> Timeout
     }
 }
 
